@@ -81,7 +81,7 @@
     {
         "server": "mq.tongxinmao.com",
         "port": "18830",
-        "client_id": "txm_1682300808",
+        "client_id": "txm_1682300809",
         "username": "",
         "password": "",
         "clean_session": true,

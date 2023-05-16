@@ -305,7 +305,7 @@ class MqttIot(CloudObservable):
         # 判断升级url是否一致
         try:
             with open(self.MCU_UPGRADE_URL_PATH, 'r') as f:
-                if f.read() == url and (self.MCU_UPGRADE_FILE_PATH in uos.listdir('/usr/')):
+                if f.read() == url and (self.MCU_UPGRADE_FILE_PATH.split('/')[-1] in uos.listdir('/usr/')):
                     log.info('upgrade url is same, we do not download. use the fw file already existed.')
                     return True
         except Exception:
