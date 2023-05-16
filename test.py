@@ -196,10 +196,13 @@ if __name__ == '__main__':
         print('content: ', content)
 
         if cmd_type == 0x02:
-            if args[0] == 0x00:
-                print('成功')
-            if args[0] == 0xff:
-                print('失败！')
+            try:
+                if args[0] == 0x00:
+                    print('成功')
+                if args[0] == 0xff:
+                    print('失败！')
+            except:
+                break
 
             data = bytearray()
             data.append(1)
@@ -209,7 +212,7 @@ if __name__ == '__main__':
             data.extend(Message.gen_crc16(data).to_bytes(2, 'little'))
             caller.send(data)
 
-            continue
+            break
 
         data = bytearray()
         data.append(1)

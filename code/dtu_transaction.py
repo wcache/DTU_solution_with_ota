@@ -363,17 +363,17 @@ class UplinkTransaction(Singleton):
         self.STOP_FLAG = True
 
         # >>> use thread stop function
-        _thread.stop_thread(self.__uplink_main_thread_id)
-        self.__uplink_main_thread_id = None
+        # _thread.stop_thread(self.__uplink_main_thread_id)
+        # self.__uplink_main_thread_id = None
         # <<<
 
     def uplink_main(self):
         """Read serial data, parse and upload to the cloud
         """
         while 1:
-            # if self.STOP_FLAG is True:
-            #     log.info('up_transaction thread out.')
-            #     break
+            if self.STOP_FLAG is True:
+                log.info('up_transaction thread out.')
+                break
 
             # Read uart data
             read_byte = self.__serial.read(nbytes=1024, timeout=100)

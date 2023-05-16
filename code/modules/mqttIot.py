@@ -501,6 +501,7 @@ class MqttIot(CloudObservable):
                 res_bytes += self.serial.read(res_length + 2)
                 res_args = res_bytes[8:-2]
                 res_crc16 = int.from_bytes(res_bytes[-2:], 'little')
+
             except Exception as e:
                 log.info('parse error: {}, packet id: {} res_bytes: {}'.format(str(e), msg.packet_id, res_bytes))
                 continue
