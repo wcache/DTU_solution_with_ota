@@ -498,7 +498,7 @@ class MqttIot(CloudObservable):
                 res_length = int.from_bytes(res_bytes[6:8], 'little')
 
                 # read enough bytes according to length
-                res_bytes += self.serial.read(res_length + 2)
+                res_bytes += self.serial.read(res_length + 2, decode=False)
                 res_args = res_bytes[8:-2]
                 res_crc16 = int.from_bytes(res_bytes[-2:], 'little')
 
