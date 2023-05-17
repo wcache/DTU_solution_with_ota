@@ -300,14 +300,15 @@ class UplinkTransaction(Singleton):
         Args:
             data (bytes): data read from uart
         """
+        # >>> GUI工具串口数据
         gui_tool_ack = self.__gui_tools_interac.parse_serial_data(data)
-        if gui_tool_ack:  # GUI tools command data
+        if gui_tool_ack is not None and gui_tool_ack != -1:  # GUI tools command data
             self.__serial.write(gui_tool_ack)
             return
+        # <<<
 
-        if settings.current_settings["system_config"]["cloud"] == "tcp_private_cloud":
-            self.__remote_post_data(data=data)
-        else:
+        if gui_tool_ack == -1:
+            # >>> cloud透传数据
             try:
                 self.__mqtt_protocol_uart_data_parse(data)
                 if len(self.__send_to_cloud_data) != 0:
@@ -315,6 +316,7 @@ class UplinkTransaction(Singleton):
                     _thread.start_new_thread(self.__send_mqtt_data, (self.__send_to_cloud_data,))
             except Exception as e:
                 log.error(e)
+            # <<<
 
     def __post_history_data(self, data):
         """Post history data to cloud
@@ -432,6 +434,7 @@ class GuiToolsInteraction():
             54: "set_cloud_conf",
             55: "retore_factory_setting",
         }
+        self.__parse_data = ""
 
     def __get_imei(self, code, data):
         return {"code": code, "data": modem.getDevImei(), "status": 1}
@@ -534,6 +537,54 @@ class GuiToolsInteraction():
             ret = {"code": cmd_code, "status": 0, "error": "Command code error"}
         return ret
 
+    # def parse_serial_data(self, serial_data):
+    #     """Parse uart data in the format specified by the GUI
+    #
+    #     Args:
+    #         gui_data (bytes): data read from uart
+    #         sid (str): uart channel id
+    #
+    #     Returns:
+    #         True: GUI data was successfully obtained
+    #         False: get GUI data failed
+    #     """
+    #     print("serial data:", serial_data)
+    #     data_list = serial_data.split(",", 2)
+    #     if len(data_list) != 3:
+    #         log.info("DTU CMD list length validate fail. CMD Parse end.")
+    #         return ""
+    #     gui_code = data_list[0]
+    #     if gui_code != "99":
+    #         return ""
+    #     data_length = data_list[1]
+    #     msg_data = data_list[2]
+    #     try:
+    #         data_len_int = int(data_length)
+    #     except:
+    #         log.error("DTU CMD data error.")
+    #         return ""
+    #     if len(msg_data) > data_len_int:
+    #         log.error("DTU CMD length validate failed.")
+    #         return ""
+    #     elif len(msg_data) < data_len_int:
+    #         log.info("Msg length shorter than length")
+    #         return ""
+    #     try:
+    #         data = ujson.loads(msg_data)
+    #     except Exception as e:
+    #         log.error(e)
+    #         return ""
+    #     cmd_code = data.get("cmd_code")
+    #     # No command code was obtained
+    #     if cmd_code is None:
+    #         return ""
+    #     params_data = data.get("data")
+    #     rec = self.__exec_command_code(int(cmd_code), data=params_data)
+    #     rec_str = ujson.dumps(rec)
+    #     rec_format = "99,{},{}".format(len(rec_str), rec_str)
+    #     print("GUI CMD SUCCESS")
+    #     return rec_format
+
     def parse_serial_data(self, serial_data):
         """Parse uart data in the format specified by the GUI
 
@@ -545,40 +596,45 @@ class GuiToolsInteraction():
             True: GUI data was successfully obtained
             False: get GUI data failed
         """
-        print("serial data:", serial_data)
-        data_list = serial_data.split(",", 2)
-        if len(data_list) != 3:
-            log.info("DTU CMD list length validate fail. CMD Parse end.")
-            return ""
+        log.info("serial data:", serial_data)
+        self.__parse_data += serial_data
+        data_list = self.__parse_data.split(",", 2)
         gui_code = data_list[0]
         if gui_code != "99":
-            return ""
+            self.__parse_data = ""
+            return -1
+        if len(data_list) != 3:
+            log.info("DTU CMD list length validate fail. CMD Parse end.")
+            return None
         data_length = data_list[1]
         msg_data = data_list[2]
         try:
             data_len_int = int(data_length)
         except:
             log.error("DTU CMD data error.")
-            return ""
+            return None
         if len(msg_data) > data_len_int:
             log.error("DTU CMD length validate failed.")
-            return ""
+            return None
         elif len(msg_data) < data_len_int:
-            log.info("Msg length shorter than length")
-            return ""
+            log.error("Msg length shorter than length")
+            return None
         try:
             data = ujson.loads(msg_data)
         except Exception as e:
             log.error(e)
-            return ""
+            return None
+
         cmd_code = data.get("cmd_code")
         # No command code was obtained
         if cmd_code is None:
-            return ""
+            self.__parse_data = ""
+            return None
         params_data = data.get("data")
         rec = self.__exec_command_code(int(cmd_code), data=params_data)
         rec_str = ujson.dumps(rec)
         rec_format = "99,{},{}".format(len(rec_str), rec_str)
-        print("GUI CMD SUCCESS")
+        log.info("GUI CMD SUCCESS")
+        self.__parse_data = ""
         return rec_format
     
