@@ -29,6 +29,7 @@ import utime
 import _thread
 import fota
 import request
+import ql_fs
 from checksum import file_crc32
 from misc import Power
 from umqtt import MQTTClient
@@ -305,7 +306,7 @@ class MqttIot(CloudObservable):
         # 判断升级url是否一致
         try:
             with open(self.MCU_UPGRADE_URL_PATH, 'r') as f:
-                if f.read() == url and (self.MCU_UPGRADE_FILE_PATH.split('/')[-1] in uos.listdir('/usr/')):
+                if f.read() == url and ql_fs.path_exists(self.MCU_UPGRADE_FILE_PATH):
                     log.info('upgrade url is same, we do not download. use the fw file already existed.')
                     return True
         except Exception:
@@ -423,6 +424,29 @@ class MqttIot(CloudObservable):
 
             return
 
+        # mcu固件传输协商
+        if not self.__check_mcu_transaction_status():
+            log.info('mcu transaction check failed...')
+
+            log.info('fw file transfer failed!')
+            self.__mqtt.publish(
+                self.UPDATE_STATUS_TOPIC,
+                ujson.dumps({
+                    "type": 'mcu',
+                    # "current_ver": self.device_fw_version,
+                    "status": {
+                        "code": 21000,
+                        "desc": "firmware transferring error"
+                    }
+                }),
+                self.__qos
+            )
+
+            # 新建透传数据线程
+            log.info('restart uplink main thread.')
+            self.__up_transaction.start_uplink_main()
+            return
+
         # 固件传输中
         log.info('start transfer fw files to mcu...')
         self.__mqtt.publish(
@@ -473,6 +497,16 @@ class MqttIot(CloudObservable):
         # 新建透传数据线程
         log.info('restart uplink main thread.')
         self.__up_transaction.start_uplink_main()
+
+    def __check_mcu_transaction_status(self):
+        for i in range(100):
+            self.serial.write(b'+++++')
+            response = self.serial.read(5, timeout=1000, decode=False)
+            log.info('get check response: {}'.format(response))
+            if response == b'+++++':
+                log.info('check mcu transaction status successfully.')
+                return True
+        return False
 
     def __check_file_crc32(self, path, checksum):
         file_crc32_value = file_crc32.calc(path)
@@ -540,8 +574,7 @@ class MqttIot(CloudObservable):
                 packet_id += 1
 
         msg = Message(0, packet_id, 0x02, b'\x00' if is_ok else b'\xff')
-        self.__send_packet_data(msg, timeout=20000)
-        return True
+        return self.__send_packet_data(msg)
 
     def device_report(self):
         data = {
