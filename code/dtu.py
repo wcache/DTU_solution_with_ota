@@ -32,7 +32,6 @@ from usr.modules.mqttIot import MqttIot
 
 from usr.settings import settings
 from usr.modules.serial import Serial
-from usr.modules.history import History
 from usr.modules.logging import getLogger
 from usr.dtu_transaction import DownlinkTransaction, OtaTransaction, UplinkTransaction, GuiToolsInteraction
 from usr.modules.remote import RemotePublish, RemoteSubscribe
@@ -122,14 +121,6 @@ class Dtu(Singleton):
         remote_pub.add_cloud(cloud)
         up_transaction.add_module(remote_pub)
         ota_transaction.add_module(remote_pub)
-
-        # History initialization
-        if settings.current_settings["system_config"]["base_function"]["offline_storage"]:
-            history = History()
-            remote_pub.addObserver(history)
-            up_transaction.add_module(history)
-            # Send history data to the cloud after being powered on
-            up_transaction.report_history()
             
         # Send module release information to cloud. After receiving this information, 
         # the cloud server checks whether to upgrade modules

@@ -38,7 +38,6 @@ from usr.modules.common import Singleton
 from usr.modules.logging import getLogger
 from usr.modules.serial import Serial
 from usr.modules.remote import RemotePublish
-from usr.modules.history import History
 from usr.settings import settings
 from usr.settings import PROJECT_NAME, PROJECT_VERSION, DEVICE_FIRMWARE_NAME, DEVICE_FIRMWARE_VERSION
 
@@ -345,9 +344,6 @@ class UplinkTransaction(Singleton):
             return True
         elif isinstance(module, Serial):
             self.__serial = module
-            return True
-        elif isinstance(module, History):
-            self.__history = module
             return True
         elif isinstance(module, GuiToolsInteraction):
             self.__gui_tools_interac = module

@@ -542,8 +542,8 @@ class MqttIot(CloudObservable):
 
             if res_packet_type == 1 \
                     and Message.crc16_check(res_bytes[:-2], res_crc16) \
-                    and res_packet_id == msg.packet_id and \
-                    res_cmd_type == msg.cmd_type:
+                    and res_packet_id == msg.packet_id \
+                    and res_cmd_type == msg.cmd_type:
                 log.info('ack for packet id: {}'.format(msg.packet_id))
                 return True
             else:
