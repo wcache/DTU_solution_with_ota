@@ -499,9 +499,9 @@ class MqttIot(CloudObservable):
         self.__up_transaction.start_uplink_main()
 
     def __check_mcu_transaction_status(self):
-        for i in range(100):
+        for i in range(10):
             self.serial.write(b'+++++')
-            response = self.serial.read(5, timeout=1000, decode=False)
+            response = self.serial.read(5, timeout=200, decode=False)
             log.info('get check response: {}'.format(response))
             if response == b'+++++':
                 log.info('check mcu transaction status successfully.')
