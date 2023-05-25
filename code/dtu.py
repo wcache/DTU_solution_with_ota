@@ -121,7 +121,7 @@ class Dtu(Singleton):
         remote_pub.add_cloud(cloud)
         up_transaction.add_module(remote_pub)
         ota_transaction.add_module(remote_pub)
-            
+
         # Send module release information to cloud. After receiving this information, 
         # the cloud server checks whether to upgrade modules
         ota_transaction.ota_check()

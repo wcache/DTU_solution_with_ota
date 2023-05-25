@@ -368,9 +368,15 @@ class MqttIot(CloudObservable):
         # 透传数据线程退出
         self.__up_transaction.stop_uplink_main()
         log.info('stop uplink main thread.')
-
         utime.sleep_ms(100)  # 等待透传线程退出
 
+        self.__mcu_ota_upgrade_process()
+
+        # 新建透传数据线程
+        log.info('restart uplink main thread.')
+        self.__up_transaction.start_uplink_main()
+
+    def __mcu_ota_upgrade_process(self):
         # 固件下载中
         self.__mqtt.publish(
             self.UPDATE_STATUS_TOPIC,
@@ -388,9 +394,6 @@ class MqttIot(CloudObservable):
         url = self.__ota_info.get('url')
         if not self.__download_mcu_upgrade_file(url):
             log.info('mcu fw upgrade progress exited...')
-            # 新建透传数据线程
-            log.info('restart uplink main thread.')
-            self.__up_transaction.start_uplink_main()
             return
 
         if not self.__check_file_crc32(
@@ -410,18 +413,11 @@ class MqttIot(CloudObservable):
                 }),
                 self.__qos
             )
-
             log.info('remove upgrade bin and url file.')
             # 文件校验失败，删除
             uos.remove(self.MCU_UPGRADE_FILE_PATH)
             uos.remove(self.MCU_UPGRADE_URL_PATH)
-
             log.info('mcu fw upgrade progress exited...')
-
-            # 新建透传数据线程
-            log.info('restart uplink main thread.')
-            self.__up_transaction.start_uplink_main()
-
             return
 
         # mcu固件传输协商
@@ -441,10 +437,6 @@ class MqttIot(CloudObservable):
                 }),
                 self.__qos
             )
-
-            # 新建透传数据线程
-            log.info('restart uplink main thread.')
-            self.__up_transaction.start_uplink_main()
             return
 
         # 固件传输中
@@ -493,10 +485,6 @@ class MqttIot(CloudObservable):
                 }),
                 self.__qos
             )
-
-        # 新建透传数据线程
-        log.info('restart uplink main thread.')
-        self.__up_transaction.start_uplink_main()
 
     def __check_mcu_transaction_status(self):
         for i in range(10):
