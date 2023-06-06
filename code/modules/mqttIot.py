@@ -36,6 +36,7 @@ from umqtt import MQTTClient
 from usr.modules.logging import getLogger
 from usr.modules.common import CloudObservable
 from usr.modules.crc16 import gen_crc16
+from usr.modules.ymodem_sender import send_file
 
 log = getLogger(__name__)
 
@@ -71,7 +72,7 @@ class MqttIot(CloudObservable):
 
     def __init__(self, server, qos, port, clean_session,
                  client_id, user, pass_word, pub_topic=None, sub_topic=None, life_time=120,
-                 device_fw_name='', device_fw_version=''):
+                 device_fw_name='', device_fw_version='', ymodem=False):
         """
         1. Init parent class CloudObservable
         2. Init cloud connect params and topic
@@ -92,6 +93,7 @@ class MqttIot(CloudObservable):
         self.__password = pass_word
         self.device_fw_name = device_fw_name
         self.device_fw_version = device_fw_version
+        self.ymodem = ymodem
         self.__ota_info = {}
         self.__serial = None
         self.__up_transaction = None
@@ -230,7 +232,7 @@ class MqttIot(CloudObservable):
     def ota_action(self, action, module=None):
         log.info('start ota upgrade!')
         log.info('self.__ota_info: ', self.__ota_info)
-        # {'file_checksum': '56', 'type': 'lte', 'url': 'https://www.baidu.com', 'new_ver': 'version2.0'}
+        # {'file_checksum': '56', 'type': 'mcu', 'url': 'https://www.baidu.com', 'new_ver': 'version2.0'}
 
         type_ = self.__ota_info.get('type')
         if type_ == 'lte':
@@ -454,7 +456,11 @@ class MqttIot(CloudObservable):
             self.__qos
         )
 
-        is_ok = self.__transfer_mcu_upgrade_fw()
+        is_ok = False
+        if self.ymodem:
+            is_ok = send_file(self.serial, [(self.MCU_UPGRADE_FILE_PATH, self.MCU_UPGRADE_FILE_PATH.split('/')[-1])])
+        else:
+            is_ok = self.__transfer_mcu_upgrade_fw()
 
         # 固件传输成功或失败
         if is_ok:

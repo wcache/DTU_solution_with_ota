@@ -66,7 +66,8 @@ class Dtu(Singleton):
                             cloud_config.get("subscribe"),
                             cloud_config.get("keep_alive"),
                             device_fw_name=DEVICE_FIRMWARE_NAME,
-                            device_fw_version=DEVICE_FIRMWARE_VERSION)
+                            device_fw_version=DEVICE_FIRMWARE_VERSION,
+                            ymodem=settings.current_settings['usr_config']['ymodem'])
             cloud.init(enforce=True)
             return cloud
         else:

@@ -13,7 +13,8 @@
     },
     "usr_config":
 	{
-      "filter_mask": ""
+      "filter_mask": "",
+      "ymodem": false
     },
     "aliyun_config":
 	{	
