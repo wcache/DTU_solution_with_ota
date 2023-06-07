@@ -310,6 +310,20 @@ class MqttIot(CloudObservable):
             with open(self.MCU_UPGRADE_URL_PATH, 'r') as f:
                 if f.read() == url and ql_fs.path_exists(self.MCU_UPGRADE_FILE_PATH):
                     log.info('upgrade url is same, we do not download. use the fw file already existed.')
+                    # 固件下载成功状态上报
+                    log.info('download file successfully! continue...')
+                    self.__mqtt.publish(
+                        self.UPDATE_STATUS_TOPIC,
+                        ujson.dumps({
+                            "type": 'mcu',
+                            # "current_ver": self.device_fw_version,
+                            "status": {
+                                "code": 12000,
+                                "desc": "firmware downloading success"
+                            }
+                        }),
+                        self.__qos
+                    )
                     return True
         except Exception:
             pass
@@ -456,10 +470,11 @@ class MqttIot(CloudObservable):
             self.__qos
         )
 
-        is_ok = False
         if self.ymodem:
+            # Ymodem协议传输固件
             is_ok = send_file(self.serial, [(self.MCU_UPGRADE_FILE_PATH, self.MCU_UPGRADE_FILE_PATH.split('/')[-1])])
         else:
+            # 自定义协议传输固件
             is_ok = self.__transfer_mcu_upgrade_fw()
 
         # 固件传输成功或失败

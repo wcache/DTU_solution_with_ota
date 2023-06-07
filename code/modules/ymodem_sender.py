@@ -211,7 +211,7 @@ class Modem(object):
         checksum = self._make_send_checksum(crc_mode, data)
         return header + data + checksum, length
 
-    def _wait_c(self, cancel=0, timeout=10, retry=10):
+    def _wait_c(self, cancel=0, timeout=1, retry=10):
         error_count, crc_mode = 0, 0
         while True:
             # Blocking may occur here, the reader needs to have a timeout mechanism
@@ -267,7 +267,7 @@ class Modem(object):
         self.writer.write(info)
         logger.debug("[Sender]: Block {} (Seq {}) sent".format(success_count, str(sequence)))
         while True:
-            char = self.reader.read(1, timeout=3000, decode=False)
+            char = self.reader.read(1, timeout=timeout * 1000, decode=False)
             if char == ACK:
                 return True
             if char == NAK:   # 接收端写文件异常直接中断
@@ -342,7 +342,7 @@ def send_file(serial, files):
             }
             trans_file.append(file_info)
 
-    if sender.send(trans_file, callback=None):
+    if sender.send(trans_file, retry=10, timeout=6, callback=None):
         logger.info("QuecPython File Download Success")
         return True
     else:
