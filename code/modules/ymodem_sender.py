@@ -253,10 +253,10 @@ class Modem(object):
                 logger.debug("[Sender]: Received %r" % flags)
                 return True
             else:
-                logger.error("[Sender]: Error, expected %r but got %r", flags, char)
+                logger.error("[Sender]: Error, expected %r but got %r" % (flags, char))
                 error_count += 1
                 if error_count > retry:
-                    logger.warning("[Sender]: Warning, EOT was not %r, aborting transfer...", flags)
+                    logger.warn("[Sender]: Warning, EOT was not %r, aborting transfer..." % flags)
                     self.abort(timeout=timeout)
                     return False
 
